@@ -22,6 +22,8 @@ def home_page():
     """Shows home page with list of users"""
     return redirect('/users')
 
+#User routes
+
 @app.route('/users')
 def users_index():
     """Shows the list of users"""
@@ -70,6 +72,7 @@ def update_users(user_id):
 
     db.session.add(user)
     db.session.commit()
+    flash(f"{user.fullname} was updated")
 
     return redirect('/users')
 
@@ -79,5 +82,60 @@ def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
+    flash(f"{user.fullname} was deleted")
 
     return redirect('/users')
+
+
+# Post routes
+
+@app.route('/users/<int:user_id>/posts/new')
+def posts_new_form(user_id):
+    """Shows form for new post for user"""
+    user = User.query.get_or_404(user_id)
+    return render_template('posts/new.html', user=user)
+
+@app.route('/users/<int:user_id>/post/new', methods=['POST'])
+def new_posts(user_id):
+    """Handle form submission for creating new post"""
+    user = User.query.get_or_404(user_id)
+    new_post = Post(title=request.form['title'], content=request.form['content'], user=user)
+    db.session.add(new_post)
+    db.session.commit()
+    flash(f"Post added")
+
+    return redirect(f"/users/{user_id}")
+
+@app.route('/posts/<int:post_id>')
+def show_posts(post_id):
+    """Shows a page with post info """
+    post = Post.query.get_or_404(post_id)
+    return render_template('posts/show.html', post=post)
+
+@app.route('/posts/<int:post_id>/edit')
+def edit_post(post_id):
+    """Show form to edit post"""
+    post = Post.query.get_or_404(post_id)
+    return render_template('posts/edit.html', post=post)
+
+@app.route('/posts/<int:post_id>/edit', methods=['POST'])
+def update_post(post_id):
+    """handle form submission for updating post"""
+    post = Post.query.get_or_404(post_id)
+    post.title = request.form['title']
+    post.content = request.form['content']
+    db.session.add(post)
+    db.session.commit()
+    flash(f"Post edited")
+
+    return redirect(f"/users/{post.user_id}")
+
+@app.route('/posts/<int:post_id>/delete', methods=['POST'])
+def delete_post(post_id):
+    """Handle form submission to delete post"""
+    post = Post.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    flash(f"Post deleted")
+
+    return redirect(f"/users/{post.user_id}")
