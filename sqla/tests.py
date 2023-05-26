@@ -1,10 +1,10 @@
 import unittest
 from flask import Flask
 from flask_testing import TestCase
-from models import Post, User
+from models import Post, User, Tag
 
 # Import your Flask app
-from app import app, db, User
+from app import app, db, User, Tag, Post
 
 # Define a test case
 class AppTestCase(TestCase):
@@ -91,6 +91,46 @@ class AppTestCase(TestCase):
         self.assertIn(b'Test Post', response.data)
         self.assertIn(b'Lorem ipsum dolor sit amet.', response.data)
 
+
+class AppTestCase(TestCase):
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        return app
+    
+    def setUp(self):
+        db.create_all()
+        
+        # Create some sample tags
+        tag1 = Tag(name='Tag 1')
+        tag2 = Tag(name='Tag 2')
+        db.session.add(tag1)
+        db.session.add(tag2)
+        db.session.commit()
+        
+        # Create some sample posts
+        post1 = Post(title='Post 1', content='Lorem ipsum dolor sit amet.')
+        post2 = Post(title='Post 2', content='Lorem ipsum dolor sit amet.')
+        db.session.add(post1)
+        db.session.add(post2)
+        db.session.commit()
+    
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+    
+    def test_index_tags(self):
+        response = self.client.get('/tags')
+        self.assert200(response)
+        self.assertIn(b'Tag 1', response.data)
+        self.assertIn(b'Tag 2', response.data)
+    
+    def test_tags_new_form(self):
+        response = self.client.get('/tags/new')
+        self.assert200(response)
+        self.assertIn(b'New Tag', response.data)
+        self.assertIn(b'Post 1', response.data)
+        self.assertIn(b'Post 2', response.data)
 
 # Run the tests
 if __name__ == '__main__':
